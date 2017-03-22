@@ -1,14 +1,19 @@
 """Party Serializers."""
 
+from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import ugettext as _
 from rest_framework import serializers
 
 from .models import Party, PartyRelationship, TenureRelationship
 from core.serializers import FieldSelectorSerializer
+from core.mixins import SchemaSelectorMixin
 from spatial.serializers import SpatialUnitSerializer
 
 
-class PartySerializer(FieldSelectorSerializer, serializers.ModelSerializer):
+class PartySerializer(SchemaSelectorMixin,
+                      FieldSelectorSerializer,
+                      serializers.ModelSerializer):
     class Meta:
         model = Party
         fields = ('id', 'name', 'type', 'attributes', )
@@ -18,6 +23,32 @@ class PartySerializer(FieldSelectorSerializer, serializers.ModelSerializer):
         project = self.context['project']
         return Party.objects.create(
             project=project, **validated_data)
+
+    def validate(self, data):
+        for name, field in self.fields.items():
+            if not type(field) in [CharField, JSONField]:
+                continue
+
+        print(self.fields)
+        return data
+
+    def validate_attributes(self, attrs):
+        errors = []
+        content_type = ContentType.objects.get_for_model(self.Meta.model)
+        label = '{}.{}'.format(content_type.app_label, content_type.model)
+        attributes = self.get_model_attributes(self.context['project'], label)
+
+        relevant_attributes = attributes.get(self.initial_data['type'], {})
+        for key, attr in relevant_attributes.items():
+            try:
+                attr.validate(attrs.get(key))
+            except ValidationError as e:
+                errors += e.messages
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        return attrs
 
 
 class PartyRelationshipReadSerializer(serializers.ModelSerializer):
