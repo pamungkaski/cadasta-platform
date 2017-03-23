@@ -37,7 +37,7 @@ pattern = re.compile(u'.*[<>;\\\/'
 
 
 def sanitize_string(value):
-    if not value:
+    if not value or not isinstance(value, str):
         return True
 
     return not pattern.match(value)

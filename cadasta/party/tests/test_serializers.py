@@ -6,10 +6,12 @@ from rest_framework.serializers import ValidationError
 from jsonattrs.models import Attribute, AttributeType, Schema
 
 from core.tests.utils.cases import UserTestCase
+from core.messages import SANITIZE_ERROR
 from organization.tests.factories import ProjectFactory
 from party import serializers
 
 from .factories import PartyFactory
+from spatial.tests.factories import SpatialUnitFactory
 
 
 class PartySerializerTest(UserTestCase, TestCase):
@@ -183,7 +185,7 @@ class PartySerializerTest(UserTestCase, TestCase):
             'name': '<Tea Party>',
             'type': 'IN',
             'attributes': {
-                'notes': 'Blah',
+                'notes': '<Blah>',
                 'age': 2
             }
         }
@@ -194,4 +196,132 @@ class PartySerializerTest(UserTestCase, TestCase):
 
         with pytest.raises(ValidationError) as e:
             serializer.is_valid(raise_exception=True)
-        # assert e.value.detail['name']
+        assert e.value.detail['name']
+        assert e.value.detail['attributes']
+
+
+class TenureRelationshipWriteSerializer(UserTestCase, TestCase):
+    def test_valid_attributes(self):
+        project = ProjectFactory.create(name='Test Project')
+        su = SpatialUnitFactory.create(project=project)
+        party = PartyFactory.create(project=project)
+
+        content_type = ContentType.objects.get(
+            app_label='party', model='tenurerelationship')
+        schema = Schema.objects.create(
+            content_type=content_type,
+            selectors=(project.organization.id, project.id, ))
+
+        Attribute.objects.create(
+            schema=schema,
+            name='notes',
+            long_name='Notes',
+            attr_type=AttributeType.objects.get(name='text'),
+            index=0
+        )
+        Attribute.objects.create(
+            schema=schema,
+            name='age',
+            long_name='Homeowner Age',
+            attr_type=AttributeType.objects.get(name='integer'),
+            index=1, required=True, default=0
+        )
+
+        data = {
+            'spatial_unit': su.id,
+            'party': party.id,
+            'tenure_type': 'WR',
+            'attributes': {
+                'notes': 'Blah',
+                'age': 2
+            }
+        }
+        serializer = serializers.TenureRelationshipWriteSerializer(
+            data=data,
+            context={'project': project}
+        )
+        assert serializer.is_valid() is True
+
+    def test_invalid_attributes(self):
+        project = ProjectFactory.create(name='Test Project')
+        su = SpatialUnitFactory.create(project=project)
+        party = PartyFactory.create(project=project)
+
+        content_type = ContentType.objects.get(
+            app_label='party', model='tenurerelationship')
+        schema = Schema.objects.create(
+            content_type=content_type,
+            selectors=(project.organization.id, project.id, ))
+
+        Attribute.objects.create(
+            schema=schema,
+            name='notes',
+            long_name='Notes',
+            attr_type=AttributeType.objects.get(name='text'),
+            index=0
+        )
+        Attribute.objects.create(
+            schema=schema,
+            name='age',
+            long_name='Homeowner Age',
+            attr_type=AttributeType.objects.get(name='integer'),
+            index=1, required=True, default=0
+        )
+
+        data = {
+            'spatial_unit': su.id,
+            'party': party.id,
+            'tenure_type': 'WR',
+            'attributes': {
+                'notes': 'Blah',
+                'age': 'Blah'
+            }
+        }
+        serializer = serializers.TenureRelationshipWriteSerializer(
+            data=data,
+            context={'project': project}
+        )
+        assert serializer.is_valid() is False
+        assert serializer.errors['attributes']
+
+    def test_sanitise_string(self):
+        project = ProjectFactory.create(name='Test Project')
+        su = SpatialUnitFactory.create(project=project)
+        party = PartyFactory.create(project=project)
+
+        content_type = ContentType.objects.get(
+            app_label='party', model='tenurerelationship')
+        schema = Schema.objects.create(
+            content_type=content_type,
+            selectors=(project.organization.id, project.id, ))
+
+        Attribute.objects.create(
+            schema=schema,
+            name='notes',
+            long_name='Notes',
+            attr_type=AttributeType.objects.get(name='text'),
+            index=0
+        )
+        Attribute.objects.create(
+            schema=schema,
+            name='age',
+            long_name='Homeowner Age',
+            attr_type=AttributeType.objects.get(name='integer'),
+            index=1, required=True, default=0
+        )
+
+        data = {
+            'spatial_unit': su.id,
+            'party': party.id,
+            'tenure_type': 'WR',
+            'attributes': {
+                'notes': '<Blah>',
+                'age': 2
+            }
+        }
+        serializer = serializers.TenureRelationshipWriteSerializer(
+            data=data,
+            context={'project': project}
+        )
+        assert serializer.is_valid() is False
+        assert SANITIZE_ERROR in serializer.errors['attributes']

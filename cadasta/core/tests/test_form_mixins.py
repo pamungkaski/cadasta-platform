@@ -12,6 +12,7 @@ from questionnaires.tests import factories as q_factories
 from .. import form_mixins
 from ..mixins import SchemaSelectorMixin
 from ..widgets import XLangSelect
+from ..messages import SANITIZE_ERROR
 
 
 class MockAttributeForm(form_mixins.AttributeForm):
@@ -409,8 +410,7 @@ class SanitizeFieldsFormTest(TestCase):
         }
         form = MockSanitizeFieldsForm(data=data)
         assert form.is_valid() is False
-        assert form.errors['name'] == [
-            "Input can not contain < > ; \\ / or emojis."]
+        assert SANITIZE_ERROR in form.errors['name']
 
     def test_invalid_form_with_number(self):
         data = {
@@ -429,6 +429,5 @@ class SanitizeFieldsFormTest(TestCase):
         }
         form = MockSanitizeFieldsForm(data=data)
         assert form.is_valid() is False
-        assert form.errors['name'] == [
-            "Input can not contain < > ; \\ / or emojis."]
+        assert SANITIZE_ERROR in form.errors['name']
         assert form.errors.get('number') is not None

@@ -1,4 +1,3 @@
-from django.utils.translation import ugettext as _
 from django.forms import Form, ModelForm, MultipleChoiceField, CharField
 from jsonattrs.mixins import template_xlang_labels
 from jsonattrs.forms import form_field_from_name
@@ -9,6 +8,7 @@ from core.validators import sanitize_string
 from questionnaires.models import Questionnaire, Question, QuestionOption
 from .mixins import SchemaSelectorMixin
 from .widgets import XLangSelect, XLangSelectMultiple
+from .messages import SANITIZE_ERROR
 
 
 class SuperUserCheck:
@@ -194,7 +194,6 @@ class SanitizeFieldsForm:
                 if name not in self.errors.keys():
                     self.errors[name] = []
 
-                self.errors[name].append(
-                    _("Input can not contain < > ; \\ / or emojis."))
+                self.errors[name].append(SANITIZE_ERROR)
 
         return cleaned_data

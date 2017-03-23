@@ -71,6 +71,7 @@ class ValidationTest(TestCase):
                                                         type='email'))
 
     def test_is_sane(self):
+        assert sanitize_string(2) is True
         assert sanitize_string('text') is True
         assert sanitize_string('大家好') is True
         assert sanitize_string('ф') is True
