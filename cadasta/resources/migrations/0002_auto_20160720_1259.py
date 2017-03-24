@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import buckets.fields
 from django.db import migrations, models
+import resources.validators
 
 
 class Migration(migrations.Migration):
@@ -21,7 +22,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='historicalresource',
             name='mime_type',
-            field=models.CharField(max_length=100),
+            field=models.CharField(max_length=100, validators=[resources.validators.validate_file_type]),
         ),
         migrations.AlterField(
             model_name='resource',
@@ -31,6 +32,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='resource',
             name='mime_type',
-            field=models.CharField(max_length=100),
+            field=models.CharField(max_length=100, validators=[resources.validators.validate_file_type]),
         ),
     ]

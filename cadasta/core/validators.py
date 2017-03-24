@@ -31,7 +31,7 @@ def validate_json(value, schema):
         raise JsonValidationError(message_dict)
 
 
-pattern = re.compile(u'.*[{}<>;\[\]\\\/'
+pattern = re.compile(u'.*[{}<>;\[\]\\\\'
                      u'\U0001F300-\U0001F64F\U0001F680-\U0001F6FF'
                      u'\u2600-\u26FF\u2700-\u27BF].*')
 
