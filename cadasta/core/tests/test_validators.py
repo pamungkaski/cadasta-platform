@@ -89,6 +89,10 @@ class ValidationTest(TestCase):
         assert sanitize_string('text/other') is False
         assert sanitize_string('text;') is False
         assert sanitize_string('te; xt') is False
+        assert sanitize_string('te{xt') is False
+        assert sanitize_string('te}xt') is False
+        assert sanitize_string('te[xt') is False
+        assert sanitize_string('te]xt') is False
         assert sanitize_string('te;xt') is False
         assert sanitize_string('🍺') is False
         assert sanitize_string('te🍺xt') is False
