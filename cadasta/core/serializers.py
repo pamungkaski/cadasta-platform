@@ -1,5 +1,4 @@
 from django.db.models.query import QuerySet
-from django.utils.translation import ugettext as _
 from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.models import ContentType
 from core.mixins import SchemaSelectorMixin
